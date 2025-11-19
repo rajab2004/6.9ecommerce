@@ -115,11 +115,24 @@ class ProductDetailView(View):
 
     def put(self, request: HttpRequest, pk: int) -> JsonResponse:
         product = get_object_or_404(Product, pk=pk)
+        data = json.loads(request.body)
+
+        print(data)
+
+        category_id = data.get('category_id')
+        category = None
+        if category_id:
+            category = get_object_or_404(Category, pk=category_id)
+
+        product = get_object_or_404(Product, pk=pk)
 
         data = json.loads(request.body)
 
         product.name = data.get('name', product.name)
         product.description = data.get('description', product.description)
+        product.price = data.get('price', product.price)
+        product.category = category if category is not None else product.category
+        product.is_active = data.get('is_active', product.is_active)
 
         product.save()
 
@@ -128,7 +141,7 @@ class ProductDetailView(View):
                 "id": product.pk,
                 "name": product.name,
                 "description": product.description,
-                "price": str(product.price),
+                "price": product.price,
                 "stock": product.stock,
                 "is_active": product.is_active,
                 "category": product.category.name if product.category else None,
@@ -138,9 +151,11 @@ class ProductDetailView(View):
             },
             status=204
         )
+    
     def delete(self, request: HttpRequest, pk:int) -> JsonResponse:
         product = get_object_or_404(Product, pk=pk)
 
         product.delete()
 
         return JsonResponse({'product': 'Deleted.'}, status=204)
+    
